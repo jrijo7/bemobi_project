@@ -5,7 +5,7 @@ from datetime import datetime
 
 # Essa parte eu peguei no gpt, tô tentando entender ela
 # Configura sua chave da API OpenAI
-openai.api_key = 'sua-chave-openai'
+openai.api_key = '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'
 
 def handle_message(message, user_id):
     message = message.lower()
