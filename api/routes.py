@@ -1,15 +1,16 @@
 from flask import Blueprint, request, jsonify
 from chat.chatbot import handle_message
 
-# inicializa o blueprint da API
 api = Blueprint('api', __name__)
 
 @api.route('/chat', methods=['POST'])
-
 def chat():
-  data = request.json
-  user_message = data.get('message')
+    data = request.json
+    user_message = data.get('message')
+    user_id = data.get('user_id')  # Identificar usuário
 
-  response = handle_message(user_message)
+    # Processar menssagem
+    response = handle_message(user_message, user_id)
 
-  return jsonify({'response': response})
+    # Resposta em formato JSON
+    return jsonify({'response': response})
