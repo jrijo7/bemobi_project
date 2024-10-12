@@ -1,33 +1,53 @@
-from datetime import datetime, timedelta
+import openai
+from models import Vencimento
+from app import db
+from datetime import datetime
 
-# Função para calcular o próximo vencimento
-def calcular_proximo_vencimento(data_inicial, intervalo_dias):
-    """
-    Calcula a próxima data de vencimento a partir de uma data inicial e um intervalo em dias.
-    
-    :param data_inicial: Data da última cobrança ou assinatura (datetime object)
-    :param intervalo_dias: Intervalo de dias entre os pagamentos (exemplo: 30 dias para mensal)
-    :return: Próxima data de vencimento (string no formato DD/MM/AAAA)
-    """
-    proximo_vencimento = data_inicial + timedelta(days=intervalo_dias)
-    return proximo_vencimento.strftime('%d/%m/%Y')
+# Essa parte eu peguei no gpt, tô tentando entender ela
+# Configura sua chave da API OpenAI
+openai.api_key = 'sua-chave-openai'
 
-def handle_message(message):
-  message = message.lower()
+def handle_message(message, user_id):
+    message = message.lower()
 
-  if "cancelar assinatura" in message:
-    return "Entendi, você gostaria de cancelar sua assinatura. Por favor, confirme."
-  elif "renovar assinatura" in message:
-    return "Certo! Vamos começar o processo de renovação da sua assinatura. Deseja continuar o plano atual ou alterar ?"
-  elif "alterar assinatura" in message:
-    return "Entendi! Você gostaria de mudar seu plano. Posso te ajudar com isso."
-  elif "vencimento de pagamento" in message:
-        # Exemplo: última cobrança em 1º de outubro de 2024
-    ultima_cobranca = datetime(2024, 10, 1)
-    intervalo_mensal = 30  # Intervalo para assinaturas mensais
-    proximo_vencimento = calcular_proximo_vencimento(ultima_cobranca, intervalo_mensal)
-    return f"Seu próximo pagamento está agendado para {proximo_vencimento}."
-  elif "planos disponíveis" in message:
-    return "Oferecemos os seguintes planos: Básico, Premium e VIP. Gostaria de saber mais detalhes ?"
-  else:
-    return "Desculpe, não consegui entender sua solicitação"
+    # Cancelamento de assinatura
+    if "cancelar assinatura" in message:
+        return "Entendido. Você gostaria de cancelar sua assinatura. Por favor, confirme."
+
+    # Alterar vencimento de assinatura
+    elif "alterar vencimento" in message:
+        try:
+            nova_data = message.split("para ")[-1]
+            data_vencimento = datetime.strptime(nova_data, '%d/%m/%Y')
+
+            vencimento = Vencimento.query.filter_by(user_id=user_id).first()
+
+            if vencimento:
+                vencimento.data_vencimento = data_vencimento
+                db.session.commit()
+                return f"A data de vencimento foi alterada para {data_vencimento.strftime('%d/%m/%Y')}."
+            else:
+                novo_vencimento = Vencimento(user_id=user_id, data_vencimento=data_vencimento)
+                db.session.add(novo_vencimento)
+                db.session.commit()
+                return f"A data de vencimento foi definida para {data_vencimento.strftime('%d/%m/%Y')}."
+        except ValueError:
+            return "Por favor, forneça a data no formato DD/MM/AAAA, por exemplo, 'alterar vencimento para 15/12/2024'."
+
+    # Renovação de assinatura
+    elif "renovar assinatura" in message:
+        return "Certo! Vamos renovar sua assinatura. Deseja continuar com o mesmo plano ou alterar?"
+
+    # Informações sobre planos disponíveis
+    elif "planos disponíveis" in message or "detalhes do plano" in message:
+        return "Oferecemos os seguintes planos: Básico, Premium e VIP. Cada plano oferece benefícios diferentes. Gostaria de saber mais detalhes sobre um dos planos?"
+
+    # Integração GPT-3
+    else:
+        
+        response = openai.Completion.create(
+            engine="text-davinci-003",
+            prompt=message,
+            max_tokens=150
+        )
+        return response.choices[0].text.strip()
