@@ -14,3 +14,4 @@ def chat():
 
     # Resposta em formato JSON
     return jsonify({'response': response})
+
