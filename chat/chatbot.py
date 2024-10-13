@@ -138,7 +138,7 @@ def verificar_problema_tecnico(message):
         if problema in message:
             return solucao
 
-    # Se o problema não for detectado, usar GPT-3 para gerar uma solução personalizada
+    # Se o problema não for detectado, GPT-3 gera uma solução
     response = openai.Completion.create(
         engine="text-davinci-003",
         prompt=f"Descreva uma solução para o seguinte problema técnico: {message}",
