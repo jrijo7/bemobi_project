@@ -14,7 +14,7 @@ def tela_inicial():
         "2 - Renovação\n"
         "3 - Planos\n"
         "4 - Cancelamento\n"
-        "5 - Ouvidoria\n"
+        "5 - Contato\n"
         "6 - Conversa Inteligente"
     )
 
@@ -103,9 +103,9 @@ def handle_message(message, user_id):
         else:
             return "Você realmente deseja cancelar sua assinatura? (sim/voltar)"
 
-    # Ouvidoria
-    elif message in ["5", "ouvidoria"]:
-        return "Por favor, entre em contato com nossa ouvidoria pelo telefone 0800-123-456 ou via e-mail: ouvidoria@empresa.com."
+    # Contato
+    elif message in ["5", "contato"]:
+        return "Por favor, entre em contato com a nossa empressa pelo site: https://bemobi.com/pt/contact-us-pt-br/"
     # Integração GPT-3
 
     elif message in ["6", "conversa inteligente"]:
