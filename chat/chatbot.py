@@ -20,7 +20,7 @@ def handle_message(message, user_id):
             nova_data = message.split("para ")[-1]
             data_vencimento = datetime.strptime(nova_data, '%d/%m/%Y')
 
-            vencimento = Vencimento.query.filter_by(user_id=user_id).first()
+            vencimento = Vencimento.query.filter_by(duser_i=user_id).first()
 
             if vencimento:
                 vencimento.data_vencimento = data_vencimento
