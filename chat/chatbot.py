@@ -3,51 +3,123 @@ from ext import db
 from datetime import datetime
 import openai
 
-# Essa parte eu peguei no gpt, tô tentando entender ela
 # Configura sua chave da API OpenAI
-openai.api_key = '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'
+openai.api_key = 'sua-chave-api-openai'  # Use uma variável de ambiente para essa chave
+
+def tela_inicial():
+    return (
+        "Bem-vindo ao Bemobi! Por favor, escolha uma das opções:\n"
+        "1 - Alterar Data de Vencimento\n"
+        "2 - Renovação\n"
+        "3 - Planos\n"
+        "4 - Cancelamento\n"
+        "5 - Ouvidoria\n"
+        "6 - Conversa Inteligente"
+    )
 
 def handle_message(message, user_id):
     message = message.lower()
 
-    # Cancelamento de assinatura
-    if "cancelar assinatura" in message:
-        return "Entendido. Você gostaria de cancelar sua assinatura. Por favor, confirme."
+    # Alterar vencimento de assinatura (o cliente escolhe a data)
+    if message in ["1", "vencimento"]:
+        return (
+            "Você escolheu alterar o vencimento. Escolha uma data para o novo vencimento:\n"
+            "1 - Dia 05\n"
+            "2 - Dia 15\n"
+            "3 - Dia 25"
+        )
 
-    # Alterar vencimento de assinatura
-    elif "alterar vencimento" in message:
-        try:
-            nova_data = message.split("para ")[-1]
-            data_vencimento = datetime.strptime(nova_data, '%d/%m/%Y')
-
-            vencimento = Vencimento.query.filter_by(duser_i=user_id).first()
-
-            if vencimento:
-                vencimento.data_vencimento = data_vencimento
-                db.session.commit()
-                return f"A data de vencimento foi alterada para {data_vencimento.strftime('%d/%m/%Y')}."
-            else:
-                novo_vencimento = Vencimento(user_id=user_id, data_vencimento=data_vencimento)
-                db.session.add(novo_vencimento)
-                db.session.commit()
-                return f"A data de vencimento foi definida para {data_vencimento.strftime('%d/%m/%Y')}."
-        except ValueError:
-            return "Por favor, forneça a data no formato DD/MM/AAAA, por exemplo, 'alterar vencimento para 15/12/2024'."
+    # Atualizar o vencimento com base na escolha do cliente
+    elif message in ["1", "2", "3"]:
+        data_map = {
+            "1": "05",
+            "2": "15",
+            "3": "25"
+        }
+        dia_vencimento = data_map.get(message, None)
+        
+        if dia_vencimento:
+            # Atualizar o vencimento no banco de dados
+            nova_data_vencimento = atualizar_vencimento_no_banco(user_id, dia_vencimento)
+            return f"A data de vencimento foi atualizada para o dia {nova_data_vencimento.strftime('%d/%m/%Y')}."
+        else:
+            return "Opção inválida. Por favor, escolha entre as opções 1, 2 ou 3 para a data de vencimento."
 
     # Renovação de assinatura
-    elif "renovar assinatura" in message:
-        return "Certo! Vamos renovar sua assinatura. Deseja continuar com o mesmo plano ou alterar?"
+    elif message in ["2", "renovação", "renovar assinatura"]:
+        return "Você gostaria de renovar sua assinatura. Confirmar renovação? (sim/voltar)"
+
+    elif message == "sim" and "renovação" in message:
+        return "Sua assinatura foi renovada com sucesso!"
 
     # Informações sobre planos disponíveis
-    elif "planos disponíveis" in message or "detalhes do plano" in message:
-        return "Oferecemos os seguintes planos: Básico e Premium. Cada plano oferece benefícios diferentes. Gostaria de saber mais detalhes sobre um dos planos?"
+    elif message in ["3", "planos", "planos disponíveis"]:
+        return (
+            "Oferecemos os seguintes planos:\n"
+            "1 - Plano Básico\n"
+            "2 - Plano Premium\n"
+            "Deseja mais informações sobre um plano específico?"
+        )
 
-    # Integração GPT-3
-    else:
-        
+    # Cancelamento: confirmação
+    elif message in ["4", "cancelamento", "cancelar assinatura"]:
+        return "Você realmente deseja cancelar sua assinatura? (sim/voltar)"
+
+    elif message == "sim" and "cancelamento" in message:
+        return "Sua assinatura foi cancelada com sucesso."
+
+    # Ouvidoria
+    elif message in ["5", "ouvidoria"]:
+        return "Por favor, entre em contato com nossa ouvidoria pelo telefone 0800-123-456 ou via e-mail: ouvidoria@empresa.com."
+
+    # Integração GPT-3 para conversa inteligente
+    elif message in ["6", "conversa inteligente"]:
+        return "Digite sua pergunta ou mensagem para iniciar uma conversa inteligente com nossa IA."
+
+    elif message.startswith("conversa"):
         response = openai.Completion.create(
             engine="text-davinci-003",
             prompt=message,
-            max_tokens=150
+            max_tokens=150,
+            n=1,
+            stop=None,
+            temperature=0.7
         )
         return response.choices[0].text.strip()
+
+    elif message == "voltar":
+        return tela_inicial()
+
+    # Caso nenhuma opção válida seja inserida
+    else:
+        return "Opção inválida. Por favor, tente novamente ou digite 'voltar' para retornar à tela inicial."
+
+# Função responsável por atualizar a data de vencimento no banco de dados
+def atualizar_vencimento_no_banco(user_id, dia_vencimento):
+    # Pegando o mês e o ano atuais
+    hoje = datetime.now()
+    mes_ano_atual = hoje.strftime('%m/%Y')
+
+    # Criando a nova data de vencimento com base na escolha do cliente
+    nova_data = f"{dia_vencimento}/{mes_ano_atual}"
+    
+    try:
+        # Converte a string da nova data para o formato datetime
+        data_vencimento = datetime.strptime(nova_data, '%d/%m/%Y')
+
+        # Verifica se o usuário já tem uma data de vencimento no banco
+        vencimento_atual = Vencimento.query.filter_by(user_id=user_id).first()
+
+        if vencimento_atual:
+            # Atualiza o vencimento existente
+            vencimento_atual.data_vencimento = data_vencimento
+            db.session.commit()
+        else:
+            # Cria um novo vencimento para o usuário
+            novo_vencimento = Vencimento(user_id=user_id, data_vencimento=data_vencimento)
+            db.session.add(novo_vencimento)
+            db.session.commit()
+
+        return data_vencimento
+    except ValueError:
+        return None
