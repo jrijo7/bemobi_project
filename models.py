@@ -1,4 +1,4 @@
-from app import db
+from ext import db
 from datetime import datetime
 
 class Vencimento(db.Model):

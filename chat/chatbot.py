@@ -1,7 +1,7 @@
-import openai
 from models import Vencimento
-from app import db
+from ext import db
 from datetime import datetime
+import openai
 
 # Essa parte eu peguei no gpt, tô tentando entender ela
 # Configura sua chave da API OpenAI
@@ -40,7 +40,7 @@ def handle_message(message, user_id):
 
     # Informações sobre planos disponíveis
     elif "planos disponíveis" in message or "detalhes do plano" in message:
-        return "Oferecemos os seguintes planos: Básico, Premium e VIP. Cada plano oferece benefícios diferentes. Gostaria de saber mais detalhes sobre um dos planos?"
+        return "Oferecemos os seguintes planos: Básico e Premium. Cada plano oferece benefícios diferentes. Gostaria de saber mais detalhes sobre um dos planos?"
 
     # Integração GPT-3
     else:
