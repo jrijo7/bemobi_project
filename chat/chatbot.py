@@ -4,7 +4,7 @@ from datetime import datetime
 import openai
 
 # Configura sua chave da API OpenAI
-openai.api_key = 'sua-chave-api-openai'  # Use uma variável de ambiente para essa chave
+openai.api_key = 'sua-chave-api-openai'  # Use uma variável de ambiente para esta chave
 
 def tela_inicial():
     return (
@@ -14,7 +14,8 @@ def tela_inicial():
         "3 - Planos\n"
         "4 - Cancelamento\n"
         "5 - Ouvidoria\n"
-        "6 - Conversa Inteligente"
+        "6 - Conversa Inteligente\n"
+        "7 - Suporte Técnico"
     )
 
 def handle_message(message, user_id):
@@ -39,7 +40,6 @@ def handle_message(message, user_id):
         dia_vencimento = data_map.get(message, None)
         
         if dia_vencimento:
-            # Atualizar o vencimento no banco de dados
             nova_data_vencimento = atualizar_vencimento_no_banco(user_id, dia_vencimento)
             return f"A data de vencimento foi atualizada para o dia {nova_data_vencimento.strftime('%d/%m/%Y')}."
         else:
@@ -72,7 +72,7 @@ def handle_message(message, user_id):
     elif message in ["5", "ouvidoria"]:
         return "Por favor, entre em contato com nossa ouvidoria pelo telefone 0800-123-456 ou via e-mail: ouvidoria@empresa.com."
 
-    # Integração GPT-3 para conversa inteligente
+    # Conversa Inteligente com GPT-3
     elif message in ["6", "conversa inteligente"]:
         return "Digite sua pergunta ou mensagem para iniciar uma conversa inteligente com nossa IA."
 
@@ -87,6 +87,14 @@ def handle_message(message, user_id):
         )
         return response.choices[0].text.strip()
 
+    # Suporte técnico automatizado
+    elif message in ["7", "suporte técnico", "problema técnico"]:
+        return "Por favor, descreva o problema técnico que você está enfrentando."
+
+    # Detecção de problemas técnicos e soluções
+    elif "problema" in message or "erro" in message or "não funciona" in message:
+        return verificar_problema_tecnico(message)
+
     elif message == "voltar":
         return tela_inicial()
 
@@ -96,26 +104,18 @@ def handle_message(message, user_id):
 
 # Função responsável por atualizar a data de vencimento no banco de dados
 def atualizar_vencimento_no_banco(user_id, dia_vencimento):
-    # Pegando o mês e o ano atuais
     hoje = datetime.now()
     mes_ano_atual = hoje.strftime('%m/%Y')
-
-    # Criando a nova data de vencimento com base na escolha do cliente
     nova_data = f"{dia_vencimento}/{mes_ano_atual}"
     
     try:
-        # Converte a string da nova data para o formato datetime
         data_vencimento = datetime.strptime(nova_data, '%d/%m/%Y')
-
-        # Verifica se o usuário já tem uma data de vencimento no banco
         vencimento_atual = Vencimento.query.filter_by(user_id=user_id).first()
 
         if vencimento_atual:
-            # Atualiza o vencimento existente
             vencimento_atual.data_vencimento = data_vencimento
             db.session.commit()
         else:
-            # Cria um novo vencimento para o usuário
             novo_vencimento = Vencimento(user_id=user_id, data_vencimento=data_vencimento)
             db.session.add(novo_vencimento)
             db.session.commit()
@@ -123,3 +123,26 @@ def atualizar_vencimento_no_banco(user_id, dia_vencimento):
         return data_vencimento
     except ValueError:
         return None
+
+# Função para verificar problemas técnicos e oferecer soluções
+def verificar_problema_tecnico(message):
+    # Listas de problemas comuns e soluções
+    problemas_comuns = {
+        "problema de conexão": "Parece que você está enfrentando um problema de conexão. Verifique sua internet e tente reiniciar o dispositivo.",
+        "plano não está funcionando": "Se o seu plano não está funcionando corretamente, tente reiniciar o app. Se o problema persistir, entre em contato com o suporte.",
+        "não consigo acessar minha conta": "Se você está com problemas para acessar sua conta, tente redefinir sua senha. Se isso não funcionar, entre em contato com o suporte técnico."
+    }
+
+    # Verifica se o problema descrito está na lista de problemas comuns
+    for problema, solucao in problemas_comuns.items():
+        if problema in message:
+            return solucao
+
+    # Se o problema não for detectado, usar GPT-3 para gerar uma solução personalizada
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=f"Descreva uma solução para o seguinte problema técnico: {message}",
+        max_tokens=150,
+        temperature=0.7
+    )
+    return response.choices[0].text.strip()
